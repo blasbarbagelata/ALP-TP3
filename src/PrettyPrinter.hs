@@ -38,6 +38,13 @@ pp ii vs (Lam t c) =
     <> text ". "
     <> pp (ii + 1) vs c
 
+pp ii vs (Let t u) =
+  text "let "
+    <> text (vs !! ii)
+    <> text " = "
+   -- <> printType t
+    <> text " in "
+    <> pp (ii + 1) vs u
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -46,6 +53,10 @@ isLam _         = False
 isApp :: Term -> Bool
 isApp (_ :@: _) = True
 isApp _         = False
+
+isLet :: Term -> Bool
+isLet (Let _ _) = True
+isLet _         = False
 
 -- pretty-printer de tipos
 printType :: Type -> Doc
@@ -63,7 +74,7 @@ fv (Bound _         ) = []
 fv (Free  (Global n)) = [n]
 fv (t   :@: u       ) = fv t ++ fv u
 fv (Lam _   u       ) = fv u
-
+fv (Let t u         ) = fv t ++ fv u         
 ---
 printTerm :: Term -> Doc
 printTerm t = pp 0 (filter (\v -> not $ elem v (fv t)) vars) t

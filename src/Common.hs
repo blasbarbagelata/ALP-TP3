@@ -27,6 +27,7 @@ module Common where
   data LamTerm  =  LVar String
                 |  LAbs String Type LamTerm
                 |  LApp LamTerm LamTerm
+                |  LLet String LamTerm LamTerm
        deriving (Show, Eq)
 
 
@@ -35,6 +36,7 @@ module Common where
              | Free Name 
              | Term :@: Term
              | Lam Type Term
+             | Let Term Term
        deriving (Show, Eq)
 
   -- Valores
