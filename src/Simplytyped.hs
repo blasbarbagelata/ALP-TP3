@@ -36,8 +36,7 @@ sub _ _ (Bound j) | otherwise = Bound j
 sub _ _ (Free n   )           = Free n
 sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
-sub i t (Let t' e)            = Let (sub i t t') (sub i t e)
--- AGREGAR LET ACA sub i t (Let p u)             = Let ()()
+sub i t (Let t' e)            = Let (sub i t t') (sub (i+1) t e)
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
@@ -49,7 +48,9 @@ eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
 eval e (u        :@: v      ) = case eval e u of
   VLam t u' -> eval e (Lam t u' :@: v)
   _         -> error "Error de tipo en run-time, verificar type checker"
--- AGREGAR LET ACA eval e (Let t u)              = 
+eval e (Let u v)              = case eval e u of
+    VLam tp u' -> eval e (sub 0 (Lam tp u') v)
+    _ -> "Error de tipo en run-time, verificar type checker"
 
 -----------------------
 --- quoting
@@ -103,5 +104,5 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
     FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
--- AGREGAR LET ACA infer'(Let v u) = papopepo
+infer' c e (Let t u) = infer' c e t >>= \tu -> infer' (tu:c) e u
 ----------------------------------
