@@ -98,7 +98,7 @@ data Token = TVar String
                | TArrow
                | TEquals
                | TEOF
-               | Tet
+               | TLet
                deriving Show
 
 ----------------------------------
