@@ -21,10 +21,13 @@ conversion :: LamTerm -> Term
 conversion = conversion' []
 
 conversion' :: [String] -> LamTerm -> Term
-conversion' b (LVar n    ) = maybe (Free (Global n)) Bound (n `elemIndex` b)
-conversion' b (LApp t u  ) = conversion' b t :@: conversion' b u
-conversion' b (LAbs n t u) = Lam t (conversion' (n : b) u)
-conversion' b (LLet s t e) = Let (conversion' b t) (conversion' (s : b) e)
+conversion' b (LVar n    )      = maybe (Free (Global n)) Bound (n `elemIndex` b)
+conversion' b (LApp t u  )      = conversion' b t :@: conversion' b u
+conversion' b (LAbs n t u)      = Lam t (conversion' (n : b) u)
+conversion' b (LLet s t e)      = Let (conversion' b t) (conversion' (s : b) e)
+conversion' b LZero             = Zero
+conversion' b (LSucc t   )      = Succ (conversion' b t)
+conversion' b (LRec t1 t2 t3)   = Rec (conversion' b t1) (conversion' b t2) (conversion' b t3)
 
 -----------------------
 --- eval
@@ -36,7 +39,10 @@ sub _ _ (Bound j) | otherwise = Bound j
 sub _ _ (Free n   )           = Free n
 sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
-sub i t (Let t' e)            = Let (sub i t t') (sub (i+1) t e)
+sub i t (Let t' e )           = Let (sub i t t') (sub (i+1) t e)
+sub i t Zero                  = Zero
+sub i t (Succ u   )           = Succ (sub i t u)
+sub i t (Rec t1 t2 t3)        = Rec (sub i t t1) (sub i t t2) (sub i t t3)
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
@@ -49,8 +55,16 @@ eval e (u        :@: v      ) = case eval e u of
   VLam t u' -> eval e (Lam t u' :@: v)
   _         -> error "Error de tipo en run-time, verificar type checker"
 eval e (Let u v             ) = case eval e u of
-    VLam tp u' -> eval e (sub 0 (Lam tp u') v)
-    _ -> error "Error de tipo en run-time, verificar type checker"
+  VLam tp u' -> eval e (sub 0 (Lam tp u') v)
+  _          -> error "Error de tipo en run-time, verificar type checker"
+eval e Zero                   = VNat VZero
+eval e (Succ t              ) = case eval e t of
+  VNat num -> VNat (VSuc num)
+  _        -> error "Error de tipo en run-time, verificar type checker"
+eval e (Rec t1 t2 t3)         = case eval e t3 of
+  VNat VZero        -> eval e t1
+  VNat (VSuc nv)    -> let r' = eval e (Rec t1 t2 (quote (VNat nv))) in eval e ((t2 :@: quote r') :@: quote (VNat nv))
+  _                 -> error "Error de tipo en run-time, verificar type checker"
 
 -----------------------
 --- quoting
@@ -58,6 +72,8 @@ eval e (Let u v             ) = case eval e u of
 
 quote :: Value -> Term
 quote (VLam t f) = Lam t f
+quote (VNat VZero) = Zero
+quote (VNat (VSuc n)) = Succ (quote (VNat n))
 
 ----------------------
 --- type checker
@@ -105,4 +121,11 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 infer' c e (Let t u) = infer' c e t >>= \tu -> infer' (tu:c) e u
+infer' c e Zero      = ret NatT
+infer' c e (Succ n ) = infer' c e n >>= \tn -> if tn == NatT then ret tn else matchError NatT tn
+infer' c e (Rec t1 t2 t3) = infer' c e t1 >>= \tn1 -> infer' c e t2 >>= \tn2 ->
+    case tn2 of
+        FunT tt1 (FunT NatT tt2) -> if (tt1 == tn1 && tt2 == tn1) then infer' c e t3 >>= \tn3 -> if tn3 == NatT then ret tn1 else matchError NatT tn3
+                                                                  else matchError (FunT tn1 (FunT NatT tn1)) (FunT tt1 (FunT NatT tt2))
+        tt                       -> matchError (FunT tn1 (FunT NatT tn1)) tt
 ----------------------------------
