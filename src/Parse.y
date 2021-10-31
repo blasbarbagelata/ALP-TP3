@@ -26,6 +26,7 @@ import Data.Char
     TYPEE   { TTypeE }
     DEF     { TDef }
     LET     { TLet }
+    IN      { TIn}
 
 %right VAR
 %left '=' 
@@ -99,6 +100,7 @@ data Token = TVar String
                | TEquals
                | TEOF
                | TLet
+               | TIn
                deriving Show
 
 ----------------------------------
@@ -126,6 +128,7 @@ lexer cont s = case s of
                               ("def",rest)  -> cont TDef rest
                               (var,rest)    -> cont (TVar var) rest
                               ("let",rest)  -> cont TLet rest
+                              ("in", rest)  -> cont TIn rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
                               ('{':('-':cs)) -> consumirBK (anidado+1) cl cont cs	
