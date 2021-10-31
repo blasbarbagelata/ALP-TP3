@@ -48,7 +48,7 @@ eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
 eval e (u        :@: v      ) = case eval e u of
   VLam t u' -> eval e (Lam t u' :@: v)
   _         -> error "Error de tipo en run-time, verificar type checker"
-eval e (Let u v)              = case eval e u of
+eval e (Let u v             ) = case eval e u of
     VLam tp u' -> eval e (sub 0 (Lam tp u') v)
     _ -> error "Error de tipo en run-time, verificar type checker"
 
