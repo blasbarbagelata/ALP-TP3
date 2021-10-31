@@ -42,7 +42,7 @@ pp ii vs (Let t u) =
   text "let "
     <> text (vs !! ii)
     <> text " = "
-   -- <> printType t
+    <> pp ii vs t
     <> text " in "
     <> pp (ii + 1) vs u
 
