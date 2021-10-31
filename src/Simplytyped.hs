@@ -50,7 +50,7 @@ eval e (u        :@: v      ) = case eval e u of
   _         -> error "Error de tipo en run-time, verificar type checker"
 eval e (Let u v)              = case eval e u of
     VLam tp u' -> eval e (sub 0 (Lam tp u') v)
-    _ -> "Error de tipo en run-time, verificar type checker"
+    _ -> error "Error de tipo en run-time, verificar type checker"
 
 -----------------------
 --- quoting
