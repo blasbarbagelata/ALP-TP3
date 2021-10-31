@@ -8,6 +8,7 @@ where
 import           Common
 import           Text.PrettyPrint.HughesPJ
 import           Prelude                 hiding ( (<>) )
+import System.Posix.Internals (c_dup2)
 -- lista de posibles nombres para variables
 vars :: [String]
 vars =
@@ -42,9 +43,14 @@ pp ii vs (Let t u) =
   text "let "
     <> text (vs !! ii)
     <> text " = "
-    <> pp ii vs t
+    <> parensIf (not (isVar t)) (pp ii vs t)
     <> text " in "
     <> pp (ii + 1) vs u
+
+isVar :: Term -> Bool 
+isVar (Bound _) = True
+isVar (Free _)  = True 
+isVar _         = False 
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
