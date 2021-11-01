@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module PrettyPrinter
   ( printTerm
   ,     -- pretty printer para terminos
@@ -58,6 +59,33 @@ pp ii vs (Rec t1 t2 t3) =
          parensIf (notValue t3) (pp ii vs t3)]
          
 pp ii vs Zero = text "0"
+pp ii vs Nil = text "[]"
+pp ii vs (Cons x Nil) = 
+    text "["
+    <> pp ii vs x
+    <> text "]"
+pp ii vs (Cons x xs) = 
+    text "["
+    <> pp ii vs x
+    <> text ", "
+    <> ppcons ii vs xs
+    where
+        ppcons ii vs (Cons x Nil) = pp ii vs x <> text "]"
+        ppcons ii vs (Cons x xs) = case xs of
+            Cons y ys -> pp ii vs x <> text ", " <> ppcons ii vs xs
+            t         -> pp ii vs x <> text ", " <> pp ii vs t
+{-    ppcons ii vs l
+    where 
+        ppcons ii vs (Cons x Nil) = pp ii vs x <> text ":[]"
+        ppcons ii vs (Cons x xs)  = case xs of
+            Cons y ys -> pp ii vs x <> text ":" <> ppcons ii vs xs
+            t         -> pp ii vs x <> text ":" <> pp ii vs t
+-- "[1,2,34]"-}
+pp ii vs (RecL t1 t2 t3) =
+  sep [text "RL",
+         parensIf (notValue t1) (pp ii vs t1),
+         parensIf (notValue t2) (pp ii vs t2),
+         parensIf (notValue t3) (pp ii vs t3)]
 
 isZero :: Term -> Bool
 isZero Zero = True
@@ -87,6 +115,7 @@ isLet _         = False
 printType :: Type -> Doc
 printType EmptyT = text "E"
 printType NatT   = text "Nat"
+printType ListNat= text "LNat"
 printType (FunT t1 t2) =
   sep [parensIf (isFun t1) (printType t1), text "->", printType t2]
 
@@ -96,14 +125,17 @@ isFun (FunT _ _) = True
 isFun _          = False
 
 fv :: Term -> [String]
-fv (Bound _         ) = []
-fv (Free  (Global n)) = [n]
-fv (t   :@: u       ) = fv t ++ fv u
-fv (Lam _   u       ) = fv u
-fv (Let t u         ) = fv t ++ fv u
-fv Zero               = []
-fv (Succ t          ) = fv t
-fv (Rec a b c       ) = fv a ++ fv b ++ fv c         
+fv (Bound _          ) = []
+fv (Free  (Global n) ) = [n]
+fv (t   :@: u        ) = fv t ++ fv u
+fv (Lam _   u        ) = fv u
+fv (Let t u          ) = fv t ++ fv u
+fv Zero                = []
+fv (Succ t           ) = fv t
+fv (Rec a b c        ) = fv a ++ fv b ++ fv c
+fv Nil                 = []
+fv (Cons _ _)          = []
+fv (RecL a b c       ) = fv a ++ fv b ++ fv c         
 ---
 printTerm :: Term -> Doc
 printTerm t = pp 0 (filter (\v -> not $ elem v (fv t)) vars) t
