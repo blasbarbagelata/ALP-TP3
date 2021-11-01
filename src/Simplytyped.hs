@@ -28,6 +28,9 @@ conversion' b (LLet s t e)      = Let (conversion' b t) (conversion' (s : b) e)
 conversion' b LZero             = Zero
 conversion' b (LSucc t   )      = Succ (conversion' b t)
 conversion' b (LRec t1 t2 t3)   = Rec (conversion' b t1) (conversion' b t2) (conversion' b t3)
+conversion' b LNil              = Nil
+conversion' b (LCons t1 t2)     = Cons (conversion' b t1) (conversion' b t2)
+conversion' b (LRec t1 t2 t3)   = RecL (conversion' b t1) (conversion' b t2) (conversion' b t3)
 
 -----------------------
 --- eval
@@ -43,6 +46,9 @@ sub i t (Let t' e )           = Let (sub i t t') (sub (i+1) t e)
 sub i t Zero                  = Zero
 sub i t (Succ u   )           = Succ (sub i t u)
 sub i t (Rec t1 t2 t3)        = Rec (sub i t t1) (sub i t t2) (sub i t t3)
+sub i t Nil                   = Nil
+sub i t (Cons u   v)          = Cons (sub i t u) (sub i t v)
+sub i t (RecL t1 t2 t3)       = Rec (sub i t t1) (sub i t t2) (sub i t t3)
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
@@ -65,6 +71,20 @@ eval e (Rec t1 t2 t3)         = case eval e t3 of
                            r' = eval e (Rec t1 t2 t) 
                        in eval e ((t2 :@: quote r') :@: t)
   _                 -> error "Error de tipo en run-time, verificar type checker"
+eval e Nil                    = VList VNil
+eval e (Cons t1 t2)           = case eval e t1 of
+    VNat nv     -> case eval e t2 of
+                        VList l -> VList (VCons (VNat nv) l)
+                        _       -> error "Error de tipo en run-time, verificar type checker"
+    _           -> error "Error de tipo en run-time, verificar type checker"
+eval e (RecL t1 t2 t3)        = case eval e t3 of
+    VList VNil            -> eval e t1
+    VList (VCons nv lv)   -> let n = quote nv
+                                 l = quote (VList lv)
+                                 rl = quote (eval e (RecL t1 t2 l))
+                             in eval e (t2 :@: n :@: l :@: rl)
+    _                       ->error "Error de tipo en run-time, verificar type checker"
+
 
 -----------------------
 --- quoting
@@ -74,6 +94,8 @@ quote :: Value -> Term
 quote (VLam t f) = Lam t f
 quote (VNat VZero) = Zero
 quote (VNat (VSuc n)) = Succ (quote (VNat n))
+quote (VList VNil) = Nil
+quote (VList (VCons v vl)) = Cons (quote v) (quote (VList vl))
 
 ----------------------
 --- type checker
@@ -128,4 +150,18 @@ infer' c e (Rec t1 t2 t3) = infer' c e t1 >>= \tn1 -> infer' c e t2 >>= \tn2 ->
         FunT tt1 (FunT NatT tt2) -> if (tt1 == tn1 && tt2 == tn1) then infer' c e t3 >>= \tn3 -> if tn3 == NatT then ret tn1 else matchError NatT tn3
                                                                   else matchError (FunT tn1 (FunT NatT tn1)) (FunT tt1 (FunT NatT tt2))
         tt                       -> matchError (FunT tn1 (FunT NatT tn1)) tt
+infer' c e Nil          = ret ListNat
+infer' c e (Cons t1 t2) = infer' c e t1 >>= \tl -> 
+    case tl of 
+        NatT -> infer' c e t2 >>= \tll -> case tll of
+                                            ListNat -> ret ListNat
+                                            _       -> matchError ListNat tll
+        _    -> matchError NatT tl
+infer' c e (RecL t1 t2 t3) = infer' c e t1 >>= \tl1 -> infer' c e t2 >>= \tl2 ->
+    case tl2 of
+        FunT NatT (FunT ListNat (FunT tt1 tt2)) -> if tt1 == tl1 && tt2 == tl1 then infer' c e t3 >>= \tl3 -> case tl3 of
+                                                                                                                ListNat -> ret tl1
+                                                                                                                _       -> matchError ListNat tl3
+                                                                               else matchError (FunT NatT (FunT ListNat (FunT tl1 tl1))) (FunT NatT (FunT ListNat (FunT tt1 tt2)))
+        _                                       -> matchError (FunT NatT (FunT ListNat (FunT tl1 tl1))) tl2
 ----------------------------------
