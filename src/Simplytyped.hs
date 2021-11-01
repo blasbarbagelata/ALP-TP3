@@ -30,7 +30,7 @@ conversion' b (LSucc t   )      = Succ (conversion' b t)
 conversion' b (LRec t1 t2 t3)   = Rec (conversion' b t1) (conversion' b t2) (conversion' b t3)
 conversion' b LNil              = Nil
 conversion' b (LCons t1 t2)     = Cons (conversion' b t1) (conversion' b t2)
-conversion' b (LRec t1 t2 t3)   = RecL (conversion' b t1) (conversion' b t2) (conversion' b t3)
+conversion' b (LRecL t1 t2 t3)   = RecL (conversion' b t1) (conversion' b t2) (conversion' b t3)
 
 -----------------------
 --- eval
