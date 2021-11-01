@@ -54,16 +54,16 @@ eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
 eval e (u        :@: v      ) = case eval e u of
   VLam t u' -> eval e (Lam t u' :@: v)
   _         -> error "Error de tipo en run-time, verificar type checker"
-eval e (Let u v             ) = case eval e u of
-  VLam tp u' -> eval e (sub 0 (Lam tp u') v)
-  _          -> error "Error de tipo en run-time, verificar type checker"
+eval e (Let u v             ) = eval e (sub 0 (quote (eval e u)) v)
 eval e Zero                   = VNat VZero
 eval e (Succ t              ) = case eval e t of
   VNat num -> VNat (VSuc num)
   _        -> error "Error de tipo en run-time, verificar type checker"
 eval e (Rec t1 t2 t3)         = case eval e t3 of
   VNat VZero        -> eval e t1
-  VNat (VSuc nv)    -> let r' = eval e (Rec t1 t2 (quote (VNat nv))) in eval e ((t2 :@: quote r') :@: quote (VNat nv))
+  VNat (VSuc nv)    -> let t = quote (VNat nv)
+                           r' = eval e (Rec t1 t2 t) 
+                       in eval e ((t2 :@: quote r') :@: t)
   _                 -> error "Error de tipo en run-time, verificar type checker"
 
 -----------------------
