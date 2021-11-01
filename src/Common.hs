@@ -21,7 +21,7 @@ module Common where
   data Type = EmptyT
             | NatT
             | FunT Type Type
-
+            | ListNat
             deriving (Show, Eq)
   
   -- Términos con nombres
@@ -32,6 +32,9 @@ module Common where
                 |  LZero
                 |  LSucc LamTerm
                 |  LRec LamTerm LamTerm LamTerm
+                |  LNil
+                |  LCons LamTerm LamTerm
+                |  LRecL LamTerm LamTerm LamTerm
        deriving (Show, Eq)
 
 
@@ -44,13 +47,21 @@ module Common where
              | Zero
              | Succ Term
              | Rec Term Term Term
+             | Nil
+             | Cons Term Term
+             | RecL Term Term Term
        deriving (Show, Eq)
 
   -- Valores
   data Value = VLam Type Term
              | VNat NumVal
+             | VList ListVal
           deriving (Show, Eq)
-  data NumVal = VZero | VSuc NumVal deriving (Show, Eq)
+          
+  data NumVal = VZero 
+               | VSuc NumVal deriving (Show, Eq)
+  data ListVal = VNil 
+               | VCons Value ListVal  deriving (Show, Eq)
 
   -- Contextos del tipado
   type Context = [Type]
