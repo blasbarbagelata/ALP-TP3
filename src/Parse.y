@@ -24,12 +24,11 @@ import Data.Char
     '->'    { TArrow }
     VAR     { TVar $$ }
     TYPEE   { TTypeE }
-    TYPEN   { TTypeN }
+    TYPEN   { TNat }
     DEF     { TDef }
     LET     { TLet }
-    IN      { TIn}
-    NAT     { TNat}
-    R       { TRec }
+    IN      { TIn }
+    REC     { TRec }
     SUCC    { TSucc }
     ZERO    { TZero }
 
@@ -37,7 +36,7 @@ import Data.Char
 %left '=' 
 %right '->'
 %right '\\' '.' LET IN
-%nonassoc R
+%nonassoc REC
 %nonassoc SUCC
 
 %%
@@ -49,8 +48,8 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
         | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6 }
+        | REC Atom Atom Exp            { LRec $2 $3 $4 }
         | SUCC Exp                     { LSucc $2 }
-        | R Exp Exp Exp                { LRec $2 $3 $4 }
         | NAbs                         { $1 }      
 
 NAbs    :: { LamTerm }
@@ -101,7 +100,6 @@ happyError = \ s i -> Failed $ "Línea "++(show (i::LineNumber))++": Error de pa
 
 data Token = TVar String
                | TTypeE
-               | TTypeN
                | TDef
                | TAbs
                | TDot
@@ -142,13 +140,13 @@ lexer cont s = case s of
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
                               ("E",rest)    -> cont TTypeE rest
-                              ("Nat", rest) -> cont TTypeN rest
+                              ("Nat", rest) -> cont TNat rest
                               ("def",rest)  -> cont TDef rest
-                              (var,rest)    -> cont (TVar var) rest
                               ("let",rest)  -> cont TLet rest
                               ("in", rest)  -> cont TIn rest
                               ("suc",rest)  -> cont TSucc rest
                               ("R", rest)   -> cont TRec rest
+                              (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
                               ('{':('-':cs)) -> consumirBK (anidado+1) cl cont cs	
