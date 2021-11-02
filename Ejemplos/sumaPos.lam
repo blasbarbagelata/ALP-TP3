@@ -1,0 +1,6 @@
+def suma = \x:Nat.\y:Nat. R y (\x:Nat.\y:Nat.suc x) x
+def sumPos = \xs:LNat. RL nil (\x:Nat.\ys:LNat.\zs:LNat. cons (suc x) (sumPos zs)) xs
+
+-- Definiciones de prueba
+def singleton = \x:Nat.cons x nil
+def concat = \xs:LNat.\ys:LNat. RL (ys) (\x:Nat.\zs:LNat.\ws:LNat. cons x ws) xs
