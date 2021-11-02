@@ -30,7 +30,7 @@ conversion' b (LSucc t   )      = Succ (conversion' b t)
 conversion' b (LRec t1 t2 t3)   = Rec (conversion' b t1) (conversion' b t2) (conversion' b t3)
 conversion' b LNil              = Nil
 conversion' b (LCons t1 t2)     = Cons (conversion' b t1) (conversion' b t2)
-conversion' b (LRecL t1 t2 t3)   = RecL (conversion' b t1) (conversion' b t2) (conversion' b t3)
+conversion' b (LRecL t1 t2 t3)  = RecL (conversion' b t1) (conversion' b t2) (conversion' b t3)
 
 -----------------------
 --- eval
@@ -48,7 +48,7 @@ sub i t (Succ u   )           = Succ (sub i t u)
 sub i t (Rec t1 t2 t3)        = Rec (sub i t t1) (sub i t t2) (sub i t t3)
 sub i t Nil                   = Nil
 sub i t (Cons u   v)          = Cons (sub i t u) (sub i t v)
-sub i t (RecL t1 t2 t3)       = Rec (sub i t t1) (sub i t t2) (sub i t t3)
+sub i t (RecL t1 t2 t3)       = RecL (sub i t t1) (sub i t t2) (sub i t t3)
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
