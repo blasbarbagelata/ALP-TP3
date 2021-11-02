@@ -3,4 +3,5 @@ def sumPos = \xs:LNat. RL nil (\x:Nat.\ys:LNat.\zs:LNat. cons (suc x) (sumPos zs
 
 -- Definiciones de prueba
 def singleton = \x:Nat.cons x nil
+def sum = \xs:LNat. RL 0 (\x:Nat.\ys:LNat.\z:Nat. suma x z) xs
 def concat = \xs:LNat.\ys:LNat. RL (ys) (\x:Nat.\zs:LNat.\ws:LNat. cons x ws) xs
