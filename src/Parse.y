@@ -35,9 +35,6 @@ import Data.Char
     NIL     { TNil }
     CONS    { TCons }
     RECL    { TRecl }
-    '['     { TLOpen }
-    ']'     { TLClose }
-    ','     { TComma } 
     
 
 %right VAR
@@ -46,7 +43,7 @@ import Data.Char
 %right '\\' '.' LET IN
 %nonassoc REC
 %nonassoc RECL
-%nonassoc CONS
+%right CONS
 %nonassoc SUCC
 
 %%
@@ -60,7 +57,7 @@ Exp     :: { LamTerm }
         | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6 }
         | REC Atom Atom Exp            { LRec $2 $3 $4 }
         | SUCC Exp                     { LSucc $2 }
-        | CONS Exp Exp                 { LCons $2 $3 }
+        | CONS Atom Atom               { LCons $2 $3 }
         | RECL Atom Atom Exp           { LRecL $2 $3 $4 }
         | NAbs                         { $1 }      
         
@@ -73,11 +70,6 @@ Atom    :: { LamTerm }
         | ZERO                         { LZero }
         | '(' Exp ')'                  { $2 }
         | NIL                          { LNil }
-        | '[' List ']'                 { $2 }
-
-List    :: {LamTerm}
-        : Atom                         { LCons $1 LNil }
-        | Atom ',' List                { LCons $1 $3 }
 
 Type    : TYPEE                        { EmptyT }
         | TYPEN                        { NatT   }
@@ -138,9 +130,6 @@ data Token = TVar String
                | TCons
                | TRecl
                | TLNat
-               | TComma
-               | TLOpen
-               | TLClose
                deriving Show
 
 ----------------------------------
@@ -162,9 +151,6 @@ lexer cont s = case s of
                     (':':cs) -> cont TColon cs
                     ('=':cs) -> cont TEquals cs
                     ('0':cs) -> cont TZero cs
-                    ('[':cs) -> cont TLOpen cs
-                    (']':cs) -> cont TLClose cs
-                    (',':cs) -> cont TComma cs
                     unknown -> \line -> Failed $ 
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
@@ -175,9 +161,9 @@ lexer cont s = case s of
                               ("let",rest)  -> cont TLet rest
                               ("in", rest)  -> cont TIn rest
                               ("suc",rest)  -> cont TSucc rest
+                              ("RL",rest)   -> cont TRecl rest
                               ("R", rest)   -> cont TRec rest
                               ("cons",rest) -> cont TCons rest
-                              ("RL",rest)   -> cont TRecl rest
                               ("nil",rest)  -> cont TNil rest 
                               (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
