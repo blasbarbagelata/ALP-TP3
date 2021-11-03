@@ -55,10 +55,10 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
         | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6 }
-        | REC Atom Atom Exp            { LRec $2 $3 $4 }
-        | SUCC Exp                     { LSucc $2 }
+        | REC Atom Atom Atom           { LRec $2 $3 $4 }
+        | SUCC Atom                    { LSucc $2 }
         | CONS Atom Atom               { LCons $2 $3 }
-        | RECL Atom Atom Exp           { LRecL $2 $3 $4 }
+        | RECL Atom Atom Atom          { LRecL $2 $3 $4 }
         | NAbs                         { $1 }      
         
 NAbs    :: { LamTerm }
