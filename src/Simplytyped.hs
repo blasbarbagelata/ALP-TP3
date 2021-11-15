@@ -68,8 +68,7 @@ eval e (Succ t              ) = case eval e t of
 eval e (Rec t1 t2 t3)         = case eval e t3 of
   VNat VZero        -> eval e t1
   VNat (VSuc nv)    -> let t = quote (VNat nv)
-                           r' = eval e (Rec t1 t2 t) 
-                       in eval e ((t2 :@: quote r') :@: t)
+                       in eval e ((t2 :@: Rec t1 t2 t) :@: t)
   _                 -> error "Error de tipo en run-time, verificar type checker"
 eval e Nil                    = VList VNil
 eval e (Cons t1 t2)           = case eval e t1 of
@@ -81,8 +80,7 @@ eval e (RecL t1 t2 t3)        = case eval e t3 of
     VList VNil            -> eval e t1
     VList (VCons nv lv)   -> let n = quote nv
                                  l = quote (VList lv)
-                                 rl = quote (eval e (RecL t1 t2 l))
-                             in eval e (t2 :@: n :@: l :@: rl)
+                             in eval e (t2 :@: n :@: l :@: RecL t1 t2 l)
     _                       ->error "Error de tipo en run-time, verificar type checker"
 
 
@@ -139,7 +137,7 @@ infer' _ e (Free  n) = case lookup n e of
   Just (_, t) -> ret t
 infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
   case tt of
-    FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
+    FunT t1 t2 -> if tu == t1 then ret t2 else matchError t1 tu
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 infer' c e (Let t u) = infer' c e t >>= \tu -> infer' (tu:c) e u
