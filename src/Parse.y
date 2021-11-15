@@ -41,10 +41,10 @@ import Data.Char
 %left '=' 
 %right '->'
 %right '\\' '.' LET IN
-%nonassoc REC
-%nonassoc RECL
+%right REC
+%right RECL
 %right CONS
-%nonassoc SUCC
+%right SUCC
 
 %%
 
